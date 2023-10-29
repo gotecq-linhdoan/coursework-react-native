@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import { Alert, StyleSheet, Text, View, Pressable, Keyboard, ScrollView } from "react-native";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import SelectDropdown from 'react-native-select-dropdown'
-import { Input, ButtonGroup, Button } from "@rneui/base";
+import { Input, ButtonGroup, Button, Image } from "@rneui/base";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import * as ImagePicker from 'expo-image-picker';
 import Database from "../Database";
 
 export const EditHikeScreen = ({ route, navigation }) => {
@@ -16,7 +17,22 @@ export const EditHikeScreen = ({ route, navigation }) => {
     const [length, setLength] = useState(hike.length);
     const [hasParking, setHasParking] = useState(hike.parking);
     const [show, setShow] = useState(false);
+    const [error, setError] = useState(null);
+    const [image, setImage] = useState(hike.image_uri);
     const countries = ["Easy", "Medium", "Hard"]
+
+    const pickImage = async () => {
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.All,
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 1,
+        });
+
+        if (!result.canceled) {
+            setImage(result.assets[0].uri);
+        }
+    };
 
     const onChange = (event, selectedDate) => {
         const currentDate = selectedDate;
@@ -25,11 +41,11 @@ export const EditHikeScreen = ({ route, navigation }) => {
     };
 
     const handleEditHike = async () => {
-        if (!name || !description || !location || !date || !level || !length) {
-            Alert.alert("Error", "Please fill in all required fields");
+        if (!name || !location || !date || !level || !length) {
+            setError("You have to fill this required field!");
             return;
         }
-        await Database.updateHike(hike.id, name, description, location, date.toLocaleDateString(), level, length, hasParking);
+        await Database.updateHike(hike.id, name, description, location, date.toLocaleDateString(), level, length, hasParking, image);
         navigation.navigate("Home");
     };
 
@@ -38,33 +54,36 @@ export const EditHikeScreen = ({ route, navigation }) => {
             Keyboard.dismiss()
         }} style={styles.container} automaticallyAdjustKeyboardInsets={true}>
             <Text style={styles.formTitle}>Edit Hike</Text>
+            <Text style={styles.labelMargin}>Hike image</Text>
+            <View style={{ marginLeft: 10}}>
+                <Image onPress={pickImage} source={image ? {uri: image} : require('./../assets/photo.png')} style={{ width: 340 , height: 200, objectFit: "fill", marginBottom: 15, marginTop: 10, borderRadius: 10 }} />
+            </View>
             <Input
                 disabledInputStyle={{ background: "#ddd" }}
-                inputContainerStyle={{}}
-                // errorMessage="Oops! that's not correct."
+                errorMessage={(error && !name) && error}
                 value={name}
                 onChangeText={setName}
-                label="Hike Name"
-                leftIcon={<Icon name="account-outline" size={20} />}
+                label={<Text style={styles.customLabel}>Hike name <Icon name="star" size={12} color={"red"} /></Text>}
+                leftIcon={<Icon name="align-horizontal-left" size={20} />}
                 placeholder="Enter Name"
             />
             <Input
                 disabledInputStyle={{ background: "#ddd" }}
-                inputContainerStyle={{}}
-                // errorMessage="Oops! that's not correct."
+                errorMessage={(error && !location) && error}
                 value={location}
                 onChangeText={setLocation}
-                label="Hike Location"
-                leftIcon={<Icon name="account-outline" size={20} />}
+                label={<Text style={styles.customLabel}>Hike location <Icon name="star" size={12} color={"red"} /></Text>}
+                leftIcon={<Icon name="directions" size={20} />}
                 placeholder="Enter Location"
             />
             <Pressable onPress={() => setShow(true)}>
                 <View pointerEvents="none">
                     <Input
+                        errorMessage={(error && !date) && error}
                         disabledInputStyle={{ background: "#ddd" }}
                         value={date.toLocaleDateString()}
-                        label="Hike Date"
-                        leftIcon={<Icon name="account-outline" size={20} />}
+                        label={<Text style={styles.customLabel}>Hike date <Icon name="star" size={12} color={"red"} /></Text>}
+                        leftIcon={<Icon name="calendar-today" size={20} />}
                         placeholder="Enter Date"
                     />
                 </View>
@@ -79,7 +98,7 @@ export const EditHikeScreen = ({ route, navigation }) => {
             />)}
             <View style={{ display: "flex", flexDirection: 'row', marginRight: 10 }}>
                 <View style={{ flex: 3 }} >
-                    <Text style={styles.labelMargin} >Parking Status</Text>
+                    <Text style={styles.labelMargin}>Parking status <Icon name="star" size={12} color={"red"} /></Text>
                     <ButtonGroup
                         buttons={['Not Available', 'Available']}
                         selectedIndex={hasParking}
@@ -90,12 +109,12 @@ export const EditHikeScreen = ({ route, navigation }) => {
                     />
                 </View>
                 <View style={{ flex: 2 }} >
-                    <Text style={styles.label}>Hike Level</Text>
+                    <Text style={styles.label}>Hike level <Icon name="star" size={12} color={"red"} /></Text>
                     <SelectDropdown
                         buttonStyle={{ height: 40, width: "100%", borderWidth: 1, borderColor: "#d3d3d3", borderRadius: 5, marginTop: 5, backgroundColor: "white" }}
                         buttonTextStyle={{ fontSize: 15, fontWeight: "bold" }}
                         data={countries}
-                        defaultValue={"Easy"}
+                        defaultValue={hike.level}
                         onSelect={(selectedItem, index) => {
                             setLevel(selectedItem)
                         }}
@@ -112,12 +131,13 @@ export const EditHikeScreen = ({ route, navigation }) => {
                 onTouchStart={(e) => {
                     e.stopPropagation()
                 }}
+                errorMessage={(error && !length) && error}
                 disabledInputStyle={{ background: "#ddd" }}
                 onChangeText={setLength}
                 value={length}
                 keyboardType="numeric"
-                label="Hike Length"
-                leftIcon={<Icon name="account-outline" size={20} />}
+                label={<Text style={styles.customLabel}>Hike length <Icon name="star" size={12} color={"red"} /></Text>}
+                leftIcon={<Icon name="gesture" size={20} />}
                 placeholder="Enter Length"
             />
             <Input
@@ -125,7 +145,7 @@ export const EditHikeScreen = ({ route, navigation }) => {
                 onChangeText={setDescription}
                 value={description}
                 label="Hike Description"
-                leftIcon={<Icon name="account-outline" size={20} />}
+                leftIcon={<Icon name="format-align-justify" size={20} />}
                 placeholder="Enter Description"
             />
             <Button
@@ -165,6 +185,11 @@ const styles = StyleSheet.create({
         color: "#89939E",
         fontWeight: "bold",
         paddingBottom: 5
+    },
+    customLabel: {
+        fontSize: 16,
+        color: "#89939E",
+        fontWeight: "bold",
     },
     labelMargin: {
         fontSize: 16,

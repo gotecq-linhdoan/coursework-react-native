@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, Image } from "react-native";
 import { Card, SpeedDial } from "@rneui/base";
 import Database from "../Database";
 
@@ -21,6 +21,14 @@ export const HikeDetailScreen = ({ route, navigation }) => {
             <Card containerStyle={{ borderRadius: 10 }}>
                 <Card.Title style={{ fontSize: 18 }}>{hike.name}</Card.Title>
                 <Card.Divider />
+                {hike.image_uri && <View style={{ alignItems: "center", overflow: 'hidden' }}>
+                    <Image
+                        style={{ width: "100%", height: 250, borderRadius: 10, overflow: "hidden" }}
+                        resizeMode="cover"
+                        source={{ uri: hike.image_uri }}
+                    />
+                </View>}
+
                 <View
                     style={{
                         position: "relative",

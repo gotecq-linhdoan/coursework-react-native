@@ -1,7 +1,7 @@
 import * as SQLite from "expo-sqlite";
 
 const database_name = "HikeApp.db";
-const database_version = "1.0";
+const database_version = "3.0";
 const database_displayname = "Hike App Database";
 const database_size = 200000;
 
@@ -14,18 +14,19 @@ const db = SQLite.openDatabase(
 
 const initDatabase = () => {
     db.transaction((tx) => {
-        // Create the Hike table
+        // Create the Hike table with the "image_uri" field
         tx.executeSql(
             `CREATE TABLE IF NOT EXISTS hike (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        description TEXT,
-        location TEXT,
-        date TEXT,
-        level TEXT,
-        length TEXT,
-        parking INTEGER
-      );`,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT,
+                description TEXT,
+                location TEXT,
+                date TEXT,
+                level TEXT,
+                length TEXT,
+                parking INTEGER,
+                image_uri TEXT
+            );`,
             [],
             () => console.log("Hike table created successfully."),
             (error) => console.log("Error occurred while creating the Hike table.", error)
@@ -33,12 +34,27 @@ const initDatabase = () => {
     });
 };
 
-const addHike = (name, description, location, date, level, length, parking) => {
+const clearDatabase = () => {
+    db.transaction((tx) => {
+        tx.executeSql(
+            "DROP TABLE IF EXISTS hike",
+            [],
+            () => {
+                // The table is dropped, now recreate it with the new schema
+                initDatabase();
+            },
+            (error) => console.log("Error occurred while dropping the hike table.", error)
+        );
+    });
+};
+
+
+const addHike = (name, description, location, date, level, length, parking, image_uri) => {
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
             tx.executeSql(
-                "INSERT INTO hike (name, description, location, date, level, length, parking) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                [name, description, location, date, level, length, parking],
+                "INSERT INTO hike (name, description, location, date, level, length, parking, image_uri) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                [name, description, location, date, level, length, parking, image_uri],
                 (_, { insertId }) => {
                     resolve(insertId);
                 },
@@ -50,12 +66,12 @@ const addHike = (name, description, location, date, level, length, parking) => {
     });
 };
 
-const updateHike = (id, name, description, location, date, level, length, parking) => {
+const updateHike = (id, name, description, location, date, level, length, parking, image_uri) => {
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
             tx.executeSql(
-                "UPDATE hike SET name = ?, description = ?, location = ?, date = ?, level = ?, length = ?, parking = ? WHERE id = ?",
-                [name, description, location, date, level, length, parking, id],
+                "UPDATE hike SET name = ?, description = ?, location = ?, date = ?, level = ?, length = ?, parking = ?, image_uri = ? WHERE id = ?",
+                [name, description, location, date, level, length, parking, image_uri, id],
                 (_, { rowsAffected }) => {
                     if (rowsAffected > 0) {
                         resolve(true);
@@ -111,24 +127,25 @@ const getHikes = () => {
 
 const deleteAllHikes = () => {
     return new Promise((resolve, reject) => {
-      db.transaction((tx) => {
-        tx.executeSql(
-          "DELETE FROM hike",
-          [],
-          () => {
-            resolve();
-          },
-          (_, error) => {
-            reject(error);
-          }
-        );
-      });
+        db.transaction((tx) => {
+            tx.executeSql(
+                "DELETE FROM hike",
+                [],
+                () => {
+                    resolve();
+                },
+                (_, error) => {
+                    reject(error);
+                }
+            );
+        });
     });
-  };
-  
+};
+
 
 const Database = {
     initDatabase,
+    clearDatabase,
     addHike,
     updateHike,
     deleteHike,

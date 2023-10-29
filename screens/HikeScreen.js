@@ -1,7 +1,7 @@
 import { useIsFocused } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import { FlatList, StyleSheet, View, Text } from "react-native";
-import { SpeedDial, ListItem, Icon, Button } from '@rneui/base';
+import { SpeedDial, ListItem, Icon, Button, Avatar } from '@rneui/base';
 import Database from "../Database";
 
 export const HikeScreen = ({ navigation }) => {
@@ -25,7 +25,7 @@ export const HikeScreen = ({ navigation }) => {
 
 
     const deleteAllHike = async () => {
-        try {   
+        try {
             await Database.deleteAllHikes();
             fetchData();
         } catch (error) {
@@ -44,9 +44,13 @@ export const HikeScreen = ({ navigation }) => {
 
     const renderHikeItem = ({ item }) => (
         <ListItem.Swipeable
+            bottomDivider
             style={styles.hikeItem}
             rightStyle={{ height: 66 }}
-            onPress={() => navigation.navigate("Detail", { hike: item })}
+            onPress={() => {
+                navigation.removeListener;
+                navigation.navigate("Detail", { hike: item })
+            }}
             leftWidth={0}
             rightWidth={65}
             minSlideWidth={40}
@@ -65,7 +69,13 @@ export const HikeScreen = ({ navigation }) => {
                 />
             )}
         >
-            <Icon name="brightness-high" type="material" />
+            {item.image_uri
+                ? <Avatar
+                    rounded
+                    source={{ uri: item.image_uri }}
+                />
+                : <Icon name="brightness-high" type="material" />
+            }
             <ListItem.Content>
                 <ListItem.Title>{item.name}</ListItem.Title>
                 <ListItem.Subtitle>{item.location} - {item.length}m</ListItem.Subtitle>
